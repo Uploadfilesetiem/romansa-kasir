@@ -62,8 +62,17 @@ class KasirController extends Controller
             $hasCatatanColumn = Schema::hasColumn('transaksi_items', 'catatan');
 
             foreach ($request->items as $item) {
-                // Ambil nama produk dari berbagai kemungkinan key agar TIDAK NULL
-                $namaProduk = $item['nama_produk'] ?? $item['nama'] ?? $item['title'] ?? 'Produk Roti';
+                // Ambil nama produk dari request atau query langsung ke tabel produks
+                $namaProduk = $item['nama_produk'] ?? $item['nama'] ?? null;
+                
+                if (empty($namaProduk) && !empty($item['id'])) {
+                    $p = DB::table('produks')->where('id', $item['id'])->first();
+                    $namaProduk = $p->nama ?? $p->nama_produk ?? null;
+                }
+
+                if (empty($namaProduk)) {
+                    $namaProduk = 'Roti Bakar';
+                }
 
                 $itemData = [
                     'transaksi_id' => $transaksiId,
