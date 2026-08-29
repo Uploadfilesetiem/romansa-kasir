@@ -159,7 +159,7 @@
       </div>
       <div class="modal-footer border-0 p-3 pt-0">
         <button type="button" class="btn btn-light w-100 fw-bold py-2 mb-2" data-bs-dismiss="modal">Tambah Menu Lagi</button>
-        <button type="button" class="btn btn-warning w-100 fw-bold py-2 text-dark fs-6" onclick="prosesBayar()">SELESAIKAN TRANSAKSI</button>
+        <button type="button" class="btn btn-warning w-100 fw-bold py-2 text-dark fs-6" id="btn-submit-bayar" onclick="prosesBayar()">SELESAIKAN TRANSAKSI</button>
       </div>
     </div>
   </div>
@@ -191,7 +191,7 @@
     if (existing) {
       existing.qty++;
     } else {
-      cart.push({ id: id, nama_produk: nama, harga: harga, qty: 1, catatan: '' });
+      cart.push({ id: id, nama_produk: nama, nama: nama, harga: harga, qty: 1, catatan: '' });
     }
     updateCartUI();
   }
@@ -242,7 +242,7 @@
     document.getElementById('kembalian-text').innerText = 'Rp0';
     
     let modalEl = document.getElementById('modalKeranjang');
-    let modal = new bootstrap.Modal(modalEl);
+    let modal = bootstrap.Modal.getOrCreateInstance(modalEl);
     modal.show();
   }
 
@@ -305,6 +305,10 @@
       return alert('Uang bayar masih kurang dari total Rp' + currentTotal.toLocaleString('id-ID'));
     }
 
+    let btnSubmit = document.getElementById('btn-submit-bayar');
+    btnSubmit.disabled = true;
+    btnSubmit.innerText = 'Memproses...';
+
     fetch('{{ route("kasir.store") }}', {
       method: 'POST',
       headers: {
@@ -317,14 +321,20 @@
         bayar: bayarInput
       })
     })
-    .then(res => res.json())
-    .then(data => {
-      if (data.status === 'success') {
+    .then(async res => {
+      let data = await res.json();
+      if (res.ok && data.status === 'success') {
         window.location.href = data.redirect;
       } else {
-        alert('Terjadi kesalahan saat memproses transaksi!');
+        alert('Gagal: ' + (data.message || 'Terjadi kesalahan sistem'));
+        btnSubmit.disabled = false;
+        btnSubmit.innerText = 'SELESAIKAN TRANSAKSI';
       }
     })
-    .catch(err => alert('Koneksi terputus: ' + err));
+    .catch(err => {
+      alert('Koneksi terputus: ' + err);
+      btnSubmit.disabled = false;
+      btnSubmit.innerText = 'SELESAIKAN TRANSAKSI';
+    });
   }
 </script>
