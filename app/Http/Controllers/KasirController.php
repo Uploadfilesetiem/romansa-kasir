@@ -24,7 +24,9 @@ class KasirController extends Controller
             ];
         }
 
-        $stok = StokMaster::first();
+        // Ambil stok_sisa langsung sebagai nilai angka
+        $stokData = StokMaster::first();
+        $stok = $stokData ? $stokData->stok_sisa : 0;
 
         return view('kasir.index', compact('produk', 'grouped', 'stok'));
     }
@@ -62,6 +64,7 @@ class KasirController extends Controller
             ]);
         }
 
+        // Otomatis kurangi stok roti tawar
         $totalQty = array_sum(array_column($request->items, 'qty'));
         $stokMaster = StokMaster::first();
         if ($stokMaster) {
