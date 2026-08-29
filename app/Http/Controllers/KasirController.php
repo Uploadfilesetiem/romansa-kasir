@@ -14,12 +14,19 @@ class KasirController extends Controller
     {
         $produk = Produk::all();
         
-        // Pengelompokan kategori yang aman dari nilai null/missing key
-        $grouped = $produk->groupBy(function ($item) {
-            return $item->kategori ?? 'Lainnya';
-        });
+        // Format $grouped agar sesuai dengan index.blade.php (kategori & items)
+        $groupedRaw = $produk->groupBy('kategori');
+        $grouped = [];
 
-        $stok = StokMaster::first();
+        foreach ($groupedRaw as $kategoriName => $items) {
+            $grouped[] = [
+                'kategori' => $kategoriName ?: 'Lainnya',
+                'items'    => $items
+            ];
+        }
+
+        $stokMaster = StokMaster::first();
+        $stok = $stokMaster ? $stokMaster->stok_sisa : 0;
 
         return view('kasir.index', compact('produk', 'grouped', 'stok'));
     }
