@@ -3,10 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\Produk;
-use App\Models\Transaksi;
-use App\Models\TransaksiItem;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 class KasirController extends Controller
 {
@@ -49,33 +48,41 @@ class KasirController extends Controller
                 $total += $item['harga'] * $item['qty'];
             }
 
-            $transaksi = Transaksi::create([
-                'kode_transaksi' => 'TRX-' . time(),
-                'total' => $total,
-                'bayar' => $request->bayar,
-                'kembalian' => max(0, $request->bayar - $total),
+            // Simpan Transaksi Utama menggunakan DB Query Builder
+            $transaksiId = DB::table('transaksis')->insertGetId([
+                'kode_transaksi'    => 'TRX-' . time(),
+                'total'             => $total,
+                'bayar'             => $request->bayar,
+                'kembalian'         => max(0, $request->bayar - $total),
                 'metode_pembayaran' => $request->metode_pembayaran,
+                'created_at'        => now(),
+                'updated_at'        => now(),
             ]);
+
+            // Cek apakah kolom catatan ada di tabel transaksi_items
+            $hasCatatanColumn = Schema::hasColumn('transaksi_items', 'catatan');
 
             foreach ($request->items as $item) {
                 $itemData = [
-                    'transaksi_id' => $transaksi->id,
+                    'transaksi_id' => $transaksiId,
                     'produk_id'    => $item['id'] ?? null,
                     'nama_produk'  => $item['nama_produk'] ?? $item['nama'] ?? 'Produk',
                     'harga'        => $item['harga'],
                     'qty'          => $item['qty'],
                     'subtotal'     => $item['harga'] * $item['qty'],
+                    'created_at'   => now(),
+                    'updated_at'   => now(),
                 ];
 
-                // Hanya masukkan catatan jika kolom catatan tersedia di DB
-                if (!empty($item['catatan'])) {
+                // Hanya masukkan kolom catatan jika kolom tersebut terdeteksi di database
+                if ($hasCatatanColumn && isset($item['catatan'])) {
                     $itemData['catatan'] = $item['catatan'];
                 }
 
                 DB::table('transaksi_items')->insert($itemData);
             }
 
-            // Potong stok
+            // Potong stok roti tawar secara otomatis
             $totalQty = array_sum(array_column($request->items, 'qty'));
             $stokMaster = DB::table('stok_master')->first();
             if ($stokMaster) {
@@ -88,8 +95,8 @@ class KasirController extends Controller
 
             return response()->json([
                 'status' => 'success',
-                'transaksi_id' => $transaksi->id,
-                'redirect' => route('kasir.struk', $transaksi->id)
+                'transaksi_id' => $transaksiId,
+                'redirect' => route('kasir.struk', $transaksiId)
             ]);
         } catch (\Exception $e) {
             return response()->json([
@@ -101,7 +108,15 @@ class KasirController extends Controller
 
     public function struk($id)
     {
-        $transaksi = Transaksi::with('items')->findOrFail($id);
+        $transaksi = DB::table('transaksis')->where('id', $id)->first();
+        $items = DB::table('transaksi_items')->where('transaksi_id', $id)->get();
+        
+        if (!$transaksi) {
+            abort(404);
+        }
+
+        $transaksi->items = $items;
+
         return view('kasir.struk', compact('transaksi'));
     }
 }
