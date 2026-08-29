@@ -5,7 +5,7 @@
   <div id="stok-banner" class="stok-banner">
     <span>Stok Roti Tawar</span>
     <span class="angka">
-      <span id="stok-sisa">{{ is_object($stok) ? $stok->stok_sisa : $stok }} tersisa</span>
+      <span id="stok-sisa">{{ $stok }} tersisa</span>
     </span>
   </div>
 
@@ -29,6 +29,7 @@
             data-nama="{{ $p->nama }}"
             data-harga="{{ $p->harga }}"
             data-kategori="{{ $p->kategori }}"
+            onclick="if(typeof tambahKeKeranjang === 'function'){ tambahKeKeranjang({{ $p->id }}, '{{ addslashes($p->nama) }}', {{ $p->harga }}); } else if(typeof addToCart === 'function'){ addToCart({{ $p->id }}, '{{ addslashes($p->nama) }}', {{ $p->harga }}); }"
           >
             <div class="nama">{{ $p->nama }}</div>
             <div class="harga">Rp{{ number_format($p->harga, 0, ',', '.') }}</div>
