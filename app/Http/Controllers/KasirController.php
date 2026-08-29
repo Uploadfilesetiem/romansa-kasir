@@ -62,22 +62,20 @@ class KasirController extends Controller
             $hasCatatanColumn = Schema::hasColumn('transaksi_items', 'catatan');
 
             foreach ($request->items as $item) {
-                // Ambil nama produk dari request atau query langsung ke tabel produks
+                // Pencarian nama produk otomatis 
                 $namaProduk = $item['nama_produk'] ?? $item['nama'] ?? null;
                 
                 if (empty($namaProduk) && !empty($item['id'])) {
                     $p = DB::table('produks')->where('id', $item['id'])->first();
-                    $namaProduk = $p->nama ?? $p->nama_produk ?? null;
-                }
-
-                if (empty($namaProduk)) {
-                    $namaProduk = 'Roti Bakar';
+                    if ($p) {
+                        $namaProduk = $p->nama ?? $p->nama_produk ?? null;
+                    }
                 }
 
                 $itemData = [
                     'transaksi_id' => $transaksiId,
                     'produk_id'    => $item['id'] ?? null,
-                    'nama_produk'  => $namaProduk,
+                    'nama_produk'  => $namaProduk ?: 'Roti Bakar',
                     'harga'        => $item['harga'],
                     'qty'          => $item['qty'],
                     'subtotal'     => $item['harga'] * $item['qty'],
