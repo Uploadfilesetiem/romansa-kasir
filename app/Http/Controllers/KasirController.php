@@ -7,6 +7,7 @@ use App\Models\StokMaster;
 use App\Models\Transaksi;
 use App\Models\TransaksiItem;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class KasirController extends Controller
 {
@@ -24,9 +25,9 @@ class KasirController extends Controller
             ];
         }
 
-        // Ambil stok_sisa langsung sebagai nilai angka
-        $stokData = StokMaster::first();
-        $stok = $stokData ? $stokData->stok_sisa : 0;
+        // Ambil nilai sisa stok langsung dari query DB agar pasti dapat angkanya
+        $stokMaster = DB::table('stok_master')->first();
+        $stok = $stokMaster ? $stokMaster->stok_sisa : 0;
 
         return view('kasir.index', compact('produk', 'grouped', 'stok'));
     }
@@ -64,12 +65,9 @@ class KasirController extends Controller
             ]);
         }
 
-        // Otomatis kurangi stok roti tawar
+        // Kurangi stok roti tawar
         $totalQty = array_sum(array_column($request->items, 'qty'));
-        $stokMaster = StokMaster::first();
-        if ($stokMaster) {
-            $stokMaster->decrement('stok_sisa', $totalQty);
-        }
+        DB::table('stok_master')->decrement('stok_sisa', $totalQty);
 
         return response()->json([
             'status' => 'success',
