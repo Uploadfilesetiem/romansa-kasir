@@ -16,6 +16,7 @@ return new class extends Migration
             $table->unsignedInteger('harga');
             $table->unsignedInteger('qty');
             $table->unsignedInteger('subtotal');
+            $table->string('catatan')->nullable();
         });
     }
 
