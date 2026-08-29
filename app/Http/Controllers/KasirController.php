@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Models\Produk;
-use App\Models\StokMaster;
 use App\Models\Transaksi;
 use App\Models\TransaksiItem;
 use Illuminate\Http\Request;
@@ -25,9 +24,15 @@ class KasirController extends Controller
             ];
         }
 
-        // Ambil nilai sisa stok langsung dari query DB agar pasti dapat angkanya
+        // Cari nilai stok secara fleksibel dari objek/array tabel stok_master
         $stokMaster = DB::table('stok_master')->first();
-        $stok = $stokMaster ? $stokMaster->stok_sisa : 0;
+        $stok = 0;
+
+        if ($stokMaster) {
+            $data = (array) $stokMaster;
+            // Ambil kolom yang mengandung nilai stok (stok_sisa, stok, jumlah, dsb)
+            $stok = $data['stok_sisa'] ?? $data['stok'] ?? $data['jumlah'] ?? reset($data) ?? 0;
+        }
 
         return view('kasir.index', compact('produk', 'grouped', 'stok'));
     }
@@ -65,9 +70,16 @@ class KasirController extends Controller
             ]);
         }
 
-        // Kurangi stok roti tawar
+        // Potong stok secara aman
         $totalQty = array_sum(array_column($request->items, 'qty'));
-        DB::table('stok_master')->decrement('stok_sisa', $totalQty);
+        $stokMaster = DB::table('stok_master')->first();
+        if ($stokMaster) {
+            $data = (array) $stokMaster;
+            $kolomStok = isset($data['stok_sisa']) ? 'stok_sisa' : (isset($data['stok']) ? 'stok' : null);
+            if ($kolomStok) {
+                DB::table('stok_master')->decrement($kolomStok, $totalQty);
+            }
+        }
 
         return response()->json([
             'status' => 'success',
