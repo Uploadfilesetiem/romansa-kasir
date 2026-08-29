@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Produk;
+use App\Models\StokMaster;
 use App\Models\Transaksi;
 use App\Models\TransaksiItem;
 use Illuminate\Http\Request;
@@ -12,7 +13,10 @@ class KasirController extends Controller
     public function index()
     {
         $produk = Produk::all();
-        return view('kasir.index', compact('produk'));
+        $grouped = $produk->groupBy('kategori');
+        $stok = StokMaster::first();
+
+        return view('kasir.index', compact('produk', 'grouped', 'stok'));
     }
 
     public function store(Request $request)
