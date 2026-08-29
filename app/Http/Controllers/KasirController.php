@@ -59,13 +59,29 @@ class KasirController extends Controller
                 'updated_at'        => now(),
             ]);
 
-            // Cek struktur kolom di tabel transaksi_items secara dinamis
             $hasCatatan   = Schema::hasColumn('transaksi_items', 'catatan');
             $hasNamaProduk = Schema::hasColumn('transaksi_items', 'nama_produk');
             $hasNama       = Schema::hasColumn('transaksi_items', 'nama');
 
             foreach ($request->items as $item) {
-                $namaVal = $item['nama_produk'] ?? $item['nama'] ?? 'Roti Bakar';
+                // PAKSA NAMA PRODUK AGAR TIDAK PERNAH NULL / KOSONG
+                $namaProdukFix = null;
+
+                if (!empty($item['nama_produk'])) {
+                    $namaProdukFix = $item['nama_produk'];
+                } elseif (!empty($item['nama'])) {
+                    $namaProdukFix = $item['nama'];
+                } elseif (!empty($item['id'])) {
+                    $p = DB::table('produks')->where('id', $item['id'])->first();
+                    if ($p) {
+                        $namaProdukFix = $p->nama ?? $p->nama_produk ?? null;
+                    }
+                }
+
+                // Jaminan Terakhir: Jika masih kosong, beri nama default
+                if (empty($namaProdukFix)) {
+                    $namaProdukFix = 'Roti Bakar Romansa';
+                }
 
                 $itemData = [
                     'transaksi_id' => $transaksiId,
@@ -77,12 +93,11 @@ class KasirController extends Controller
                     'updated_at'   => now(),
                 ];
 
-                // Isi nama produk ke kolom mana saja yang tersedia di database
                 if ($hasNamaProduk) {
-                    $itemData['nama_produk'] = $namaVal;
+                    $itemData['nama_produk'] = $namaProdukFix;
                 }
                 if ($hasNama) {
-                    $itemData['nama'] = $namaVal;
+                    $itemData['nama'] = $namaProdukFix;
                 }
                 if ($hasCatatan && isset($item['catatan'])) {
                     $itemData['catatan'] = $item['catatan'];
@@ -124,9 +139,8 @@ class KasirController extends Controller
             abort(404);
         }
 
-        // Penyesuaian nama produk untuk tampilan struk
         foreach ($items as $it) {
-            $it->nama_produk = $it->nama_produk ?? $it->nama ?? 'Roti Bakar';
+            $it->nama_produk = $it->nama_produk ?? $it->nama ?? 'Roti Bakar Romansa';
         }
 
         $transaksi->items = $items;
