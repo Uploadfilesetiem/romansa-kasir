@@ -4,7 +4,7 @@
 @section('content')
   <div id="stok-banner" class="stok-banner">
     <span>Stok Roti Tawar</span>
-    <span class="angka"><span id="stok-sisa">{{ $stok }} tersisa (dari {{ $stok }})</span></span>
+    <span class="angka"><span id="stok-sisa">{{ $stok->stok_sisa ?? 0 }} tersisa (dari {{ $stok->stok_awal ?? 0 }})</span></span>
   </div>
 
   <div class="kategori-scroll">
