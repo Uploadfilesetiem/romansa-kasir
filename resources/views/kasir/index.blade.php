@@ -2,30 +2,31 @@
 @section('title', 'Kasir')
 
 @section('content')
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
 <style>
-  /* Styling Card & Animasi Klik */
   .menu-card {
-    border: 1px solid #f1f5f9;
-    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
     background: #ffffff;
-    padding: 12px;
+    padding: 14px;
     text-align: left;
-    transition: all 0.15s ease-in-out;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.04);
+    transition: transform 0.1s ease, background-color 0.1s ease;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.03);
     cursor: pointer;
     user-select: none;
     -webkit-tap-highlight-color: transparent;
   }
   .menu-card:active {
-    transform: scale(0.95);
+    transform: scale(0.94);
     background-color: #fef3c7 !important;
-    box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.4);
+    border-color: #f59e0b;
   }
   .menu-card .nama {
     font-weight: 600;
     color: #1e293b;
     font-size: 0.95rem;
-    line-height: 1.3;
   }
   .menu-card .harga {
     color: #d97706;
@@ -34,10 +35,9 @@
     margin-top: 6px;
   }
 
-  /* Sticky Cart Bar */
   .cart-bar-custom {
     position: fixed;
-    bottom: 60px;
+    bottom: 20px;
     left: 50%;
     transform: translateX(-50%);
     width: 92%;
@@ -46,31 +46,16 @@
     color: #fff;
     border-radius: 16px;
     padding: 12px 18px;
-    box-shadow: 0 10px 25px -5px rgba(0,0,0,0.3);
-    z-index: 1030;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+    z-index: 1040;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    animation: slideUp 0.3s ease-out;
-  }
-  @keyframes slideUp {
-    from { transform: translate(-50%, 100%); opacity: 0; }
-    to { transform: translate(-50%, 0); opacity: 1; }
-  }
-
-  /* Badge Animasi Tambah Item */
-  .badge-pop {
-    animation: popScale 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-  }
-  @keyframes popScale {
-    0% { transform: scale(1); }
-    50% { transform: scale(1.4); }
-    100% { transform: scale(1); }
   }
 </style>
 
-<div class="container pb-5 mb-5">
-  <div id="stok-banner" class="stok-banner mb-3 p-3 bg-white rounded-3 shadow-sm d-flex justify-content-between align-items-center">
+<div class="container pb-5 mb-5" style="max-width: 600px;">
+  <div id="stok-banner" class="stok-banner mb-3 p-3 bg-white rounded-3 shadow-sm d-flex justify-content-between align-items-center border">
     <span class="fw-bold text-secondary">Stok Roti Tawar</span>
     <span class="badge bg-warning text-dark fs-6 px-3 py-2 rounded-pill fw-bold">
       <span id="stok-sisa">{{ $stok }} tersisa</span>
@@ -78,22 +63,21 @@
   </div>
 
   <div class="kategori-scroll mb-3 d-flex gap-2 overflow-auto pb-2" style="white-space: nowrap;">
-    <button type="button" class="btn btn-sm btn-dark rounded-pill px-3 active" data-kategori="Semua" onclick="filterKategori('Semua', this)">Semua</button>
+    <button type="button" class="btn btn-sm btn-dark rounded-pill px-3 active" onclick="filterKategori('Semua', this)">Semua</button>
     @foreach ($grouped as $g)
-      <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill px-3" data-kategori="{{ $g['kategori'] }}" onclick="filterKategori('{{ addslashes($g['kategori']) }}', this)">{{ $g['kategori'] }}</button>
+      <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill px-3" onclick="filterKategori('{{ addslashes($g['kategori']) }}', this)">{{ $g['kategori'] }}</button>
     @endforeach
   </div>
 
   @forelse ($grouped as $g)
     <div class="kategori-block mb-4" data-kategori="{{ $g['kategori'] }}">
-      <div class="kategori-heading fw-bold mb-2 text-uppercase text-amber-700" style="color: #b45309; letter-spacing: 0.5px; font-size: 0.85rem;">{{ $g['kategori'] }}</div>
+      <div class="fw-bold mb-2 text-uppercase" style="color: #b45309; letter-spacing: 0.5px; font-size: 0.85rem;">{{ $g['kategori'] }}</div>
       <div class="row g-2">
         @foreach ($g['items'] as $p)
-          <div class="col-6 col-md-4">
+          <div class="col-12 col-sm-6">
             <div
-              class="menu-card h-100"
-              data-id="{{ $p->id }}"
-              onclick="tambahItem({{ $p->id }}, '{{ addslashes($p->nama) }}', {{ $p->harga }}, this)"
+              class="menu-card"
+              onclick="tambahItem({{ $p->id }}, '{{ addslashes($p->nama) }}', {{ $p->harga }})"
             >
               <div class="nama">{{ $p->nama }}</div>
               <div class="harga">Rp{{ number_format($p->harga, 0, ',', '.') }}</div>
@@ -107,7 +91,6 @@
   @endforelse
 </div>
 
-<!-- Floating Cart Bar Modern -->
 <div id="cart-bar" class="cart-bar-custom d-none">
   <div>
     <div class="small text-light text-opacity-75">Pesanan Kasir</div>
@@ -116,23 +99,22 @@
       <span class="ms-2 text-warning fw-bold" id="cart-total">Rp0</span>
     </div>
   </div>
-  <button class="btn btn-warning fw-bold text-dark rounded-3 px-3 py-2" onclick="bukaModalKeranjang()">
+  <button type="button" class="btn btn-warning fw-bold text-dark rounded-3 px-3 py-2" onclick="bukaModalKeranjang()">
     Bayar & Struk &rarr;
   </button>
 </div>
 
-<!-- Modal Detail Pesanan -->
 <div class="modal fade" id="modalKeranjang" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered modal-fullscreen-sm-down">
+  <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content rounded-4 border-0 shadow-lg">
       <div class="modal-header bg-light">
         <h5 class="modal-title fw-bold text-dark">Detail Pesanan & Pembayaran</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <div class="modal-body p-3">
-        <div id="cart-items-list" class="mb-3" style="max-height: 280px; overflow-y: auto;"></div>
+        <div id="cart-items-list" class="mb-3" style="max-height: 250px; overflow-y: auto;"></div>
         
-        <div class="bg-light p-3 rounded-3 mb-3">
+        <div class="bg-light p-3 rounded-3 mb-2 border">
           <div class="d-flex justify-content-between mb-2">
             <span class="text-secondary fw-bold">Total Tagihan</span>
             <span class="fw-bold text-success fs-5" id="modal-cart-total">Rp0</span>
@@ -146,7 +128,7 @@
           </div>
           <div>
             <label class="form-label small fw-bold text-secondary">Uang Diterima (Rp)</label>
-            <input type="number" id="bayar_input" class="form-control form-control-sm fw-bold fs-6" placeholder="Contoh: 50000">
+            <input type="number" id="bayar_input" class="form-control form-control-sm fw-bold fs-6" placeholder="Masukkan nominal uang">
           </div>
         </div>
       </div>
@@ -178,11 +160,7 @@
     });
   }
 
-  function tambahItem(id, nama, harga, el) {
-    // Animasi visual klik pada card
-    el.classList.add('badge-pop');
-    setTimeout(() => el.classList.remove('badge-pop'), 200);
-
+  function tambahItem(id, nama, harga) {
     let existing = cart.find(item => item.id === id);
     if (existing) {
       existing.qty++;
@@ -202,13 +180,9 @@
     });
 
     const cartBar = document.getElementById('cart-bar');
-    const cartCount = document.getElementById('cart-count');
-    
     if (totalCount > 0) {
       cartBar.classList.remove('d-none');
-      cartCount.innerText = totalCount;
-      cartCount.classList.add('badge-pop');
-      setTimeout(() => cartCount.classList.remove('badge-pop'), 200);
+      document.getElementById('cart-count').innerText = totalCount;
       document.getElementById('cart-total').innerText = 'Rp' + totalPrice.toLocaleString('id-ID');
       document.getElementById('modal-cart-total').innerText = 'Rp' + totalPrice.toLocaleString('id-ID');
     } else {
@@ -232,14 +206,14 @@
               <button type="button" class="btn btn-sm btn-outline-success fw-bold px-2 py-0" onclick="ubahQty(${index}, 1)">+</button>
             </div>
           </div>
-          <input type="text" class="form-control form-control-sm mt-2" placeholder="Catatan selai/topping (opsional)..." value="${item.catatan}" onchange="updateCatatan(${index}, this.value)">
+          <input type="text" class="form-control form-control-sm mt-2" placeholder="Catatan selai/topping..." value="${item.catatan}" onchange="updateCatatan(${index}, this.value)">
         </div>
       `;
     });
 
     document.getElementById('cart-items-list').innerHTML = html;
     let modalEl = document.getElementById('modalKeranjang');
-    let modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+    let modal = new bootstrap.Modal(modalEl);
     modal.show();
   }
 
