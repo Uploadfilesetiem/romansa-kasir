@@ -48,7 +48,7 @@ class KasirController extends Controller
                 $total += $item['harga'] * $item['qty'];
             }
 
-            // Simpan Transaksi Utama menggunakan DB Query Builder
+            // Simpan Transaksi Utama
             $transaksiId = DB::table('transaksis')->insertGetId([
                 'kode_transaksi'    => 'TRX-' . time(),
                 'total'             => $total,
@@ -59,14 +59,16 @@ class KasirController extends Controller
                 'updated_at'        => now(),
             ]);
 
-            // Cek apakah kolom catatan ada di tabel transaksi_items
             $hasCatatanColumn = Schema::hasColumn('transaksi_items', 'catatan');
 
             foreach ($request->items as $item) {
+                // Ambil nama produk dari berbagai kemungkinan key agar TIDAK NULL
+                $namaProduk = $item['nama_produk'] ?? $item['nama'] ?? $item['title'] ?? 'Produk Roti';
+
                 $itemData = [
                     'transaksi_id' => $transaksiId,
                     'produk_id'    => $item['id'] ?? null,
-                    'nama_produk'  => $item['nama_produk'] ?? $item['nama'] ?? 'Produk',
+                    'nama_produk'  => $namaProduk,
                     'harga'        => $item['harga'],
                     'qty'          => $item['qty'],
                     'subtotal'     => $item['harga'] * $item['qty'],
@@ -74,7 +76,6 @@ class KasirController extends Controller
                     'updated_at'   => now(),
                 ];
 
-                // Hanya masukkan kolom catatan jika kolom tersebut terdeteksi di database
                 if ($hasCatatanColumn && isset($item['catatan'])) {
                     $itemData['catatan'] = $item['catatan'];
                 }
@@ -82,7 +83,7 @@ class KasirController extends Controller
                 DB::table('transaksi_items')->insert($itemData);
             }
 
-            // Potong stok roti tawar secara otomatis
+            // Potong stok
             $totalQty = array_sum(array_column($request->items, 'qty'));
             $stokMaster = DB::table('stok_master')->first();
             if ($stokMaster) {
