@@ -52,6 +52,12 @@
     justify-content: space-between;
     align-items: center;
   }
+
+  .btn-nominal {
+    border-radius: 8px;
+    font-weight: 700;
+    font-size: 0.85rem;
+  }
 </style>
 
 <div class="container pb-5 mb-5" style="max-width: 600px;">
@@ -112,24 +118,43 @@
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <div class="modal-body p-3">
-        <div id="cart-items-list" class="mb-3" style="max-height: 250px; overflow-y: auto;"></div>
+        <div id="cart-items-list" class="mb-3" style="max-height: 220px; overflow-y: auto;"></div>
         
         <div class="bg-light p-3 rounded-3 mb-2 border">
           <div class="d-flex justify-content-between mb-2">
             <span class="text-secondary fw-bold">Total Tagihan</span>
             <span class="fw-bold text-success fs-5" id="modal-cart-total">Rp0</span>
           </div>
+
           <div class="mb-2">
-            <label class="form-label small fw-bold text-secondary">Metode Pembayaran</label>
-            <select id="metode_pembayaran" class="form-select form-select-sm fw-bold">
+            <label class="form-label small fw-bold text-secondary mb-1">Metode Pembayaran</label>
+            <select id="metode_pembayaran" class="form-select form-select-sm fw-bold" onchange="cekMetode(this.value)">
               <option value="CASH">Tunai (CASH)</option>
               <option value="QRIS">QRIS</option>
             </select>
           </div>
-          <div>
-            <label class="form-label small fw-bold text-secondary">Uang Diterima (Rp)</label>
-            <input type="number" id="bayar_input" class="form-control form-control-sm fw-bold fs-6" placeholder="Masukkan nominal uang">
+
+          <div id="section-cash">
+            <label class="form-label small fw-bold text-secondary mb-1">Nominal Cepat (Rp)</label>
+            <div class="d-flex gap-1 flex-wrap mb-2">
+              <button type="button" class="btn btn-sm btn-outline-dark btn-nominal flex-fill" onclick="setNominal('PAS')">Uang Pas</button>
+              <button type="button" class="btn btn-sm btn-outline-dark btn-nominal flex-fill" onclick="setNominal(10000)">10k</button>
+              <button type="button" class="btn btn-sm btn-outline-dark btn-nominal flex-fill" onclick="setNominal(20000)">20k</button>
+              <button type="button" class="btn btn-sm btn-outline-dark btn-nominal flex-fill" onclick="setNominal(50000)">50k</button>
+              <button type="button" class="btn btn-sm btn-outline-dark btn-nominal flex-fill" onclick="setNominal(100000)">100k</button>
+            </div>
+
+            <div>
+              <label class="form-label small fw-bold text-secondary mb-1">Uang Diterima (Rp)</label>
+              <input type="number" id="bayar_input" class="form-control form-control-sm fw-bold fs-6" placeholder="Masukkan nominal" oninput="hitungKembalian()">
+            </div>
+
+            <div class="d-flex justify-content-between align-items-center mt-3 pt-2 border-top">
+              <span class="fw-bold text-secondary">Kembalian</span>
+              <span class="fw-bold text-primary fs-5" id="kembalian-text">Rp0</span>
+            </div>
           </div>
+
         </div>
       </div>
       <div class="modal-footer border-0 p-3 pt-0">
@@ -142,6 +167,7 @@
 
 <script>
   let cart = [];
+  let currentTotal = 0;
 
   function filterKategori(kat, btn) {
     document.querySelectorAll('.kategori-scroll button').forEach(b => {
@@ -172,19 +198,19 @@
 
   function updateCartUI() {
     let totalCount = 0;
-    let totalPrice = 0;
+    currentTotal = 0;
 
     cart.forEach(item => {
       totalCount += item.qty;
-      totalPrice += (item.harga * item.qty);
+      currentTotal += (item.harga * item.qty);
     });
 
     const cartBar = document.getElementById('cart-bar');
     if (totalCount > 0) {
       cartBar.classList.remove('d-none');
       document.getElementById('cart-count').innerText = totalCount;
-      document.getElementById('cart-total').innerText = 'Rp' + totalPrice.toLocaleString('id-ID');
-      document.getElementById('modal-cart-total').innerText = 'Rp' + totalPrice.toLocaleString('id-ID');
+      document.getElementById('cart-total').innerText = 'Rp' + currentTotal.toLocaleString('id-ID');
+      document.getElementById('modal-cart-total').innerText = 'Rp' + currentTotal.toLocaleString('id-ID');
     } else {
       cartBar.classList.add('d-none');
     }
@@ -212,6 +238,9 @@
     });
 
     document.getElementById('cart-items-list').innerHTML = html;
+    document.getElementById('bayar_input').value = '';
+    document.getElementById('kembalian-text').innerText = 'Rp0';
+    
     let modalEl = document.getElementById('modalKeranjang');
     let modal = new bootstrap.Modal(modalEl);
     modal.show();
@@ -236,15 +265,44 @@
     cart[index].catatan = val;
   }
 
+  function setNominal(val) {
+    if (val === 'PAS') {
+      document.getElementById('bayar_input').value = currentTotal;
+    } else {
+      document.getElementById('bayar_input').value = val;
+    }
+    hitungKembalian();
+  }
+
+  function hitungKembalian() {
+    let bayar = parseFloat(document.getElementById('bayar_input').value) || 0;
+    let kembalian = bayar - currentTotal;
+    const kembalianText = document.getElementById('kembalian-text');
+
+    if (kembalian >= 0) {
+      kembalianText.innerText = 'Rp' + kembalian.toLocaleString('id-ID');
+      kembalianText.className = 'fw-bold text-primary fs-5';
+    } else {
+      kembalianText.innerText = 'Kurang Rp' + Math.abs(kembalian).toLocaleString('id-ID');
+      kembalianText.className = 'fw-bold text-danger fs-6';
+    }
+  }
+
+  function cekMetode(val) {
+    if (val === 'QRIS') {
+      document.getElementById('bayar_input').value = currentTotal;
+      hitungKembalian();
+    }
+  }
+
   function prosesBayar() {
     if (cart.length === 0) return alert('Keranjang kosong!');
     
-    let total = cart.reduce((sum, item) => sum + (item.harga * item.qty), 0);
     let bayarInput = parseFloat(document.getElementById('bayar_input').value);
     let metode = document.getElementById('metode_pembayaran').value;
 
-    if (isNaN(bayarInput) || bayarInput < total) {
-      return alert('Uang bayar kurang! Total belanja Rp' + total.toLocaleString('id-ID'));
+    if (isNaN(bayarInput) || bayarInput < currentTotal) {
+      return alert('Uang bayar masih kurang dari total Rp' + currentTotal.toLocaleString('id-ID'));
     }
 
     fetch('{{ route("kasir.store") }}', {
