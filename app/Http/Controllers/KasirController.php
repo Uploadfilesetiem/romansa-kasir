@@ -24,7 +24,6 @@ class KasirController extends Controller
             ];
         }
 
-        // Ambil objek StokMaster utuh
         $stok = StokMaster::first();
 
         return view('kasir.index', compact('produk', 'grouped', 'stok'));
@@ -63,7 +62,6 @@ class KasirController extends Controller
             ]);
         }
 
-        // Kurangi stok roti tawar setelah transaksi berhasil
         $totalQty = array_sum(array_column($request->items, 'qty'));
         $stokMaster = StokMaster::first();
         if ($stokMaster) {
