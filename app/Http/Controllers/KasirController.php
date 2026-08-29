@@ -48,7 +48,7 @@ class KasirController extends Controller
                 $total += $item['harga'] * $item['qty'];
             }
 
-            // Simpan Transaksi Utama
+            // 1. Simpan Transaksi Utama
             $transaksiId = DB::table('transaksis')->insertGetId([
                 'kode_transaksi'    => 'TRX-' . time(),
                 'total'             => $total,
@@ -59,45 +59,54 @@ class KasirController extends Controller
                 'updated_at'        => now(),
             ]);
 
-            $hasCatatan   = Schema::hasColumn('transaksi_items', 'catatan');
-            $hasNamaProduk = Schema::hasColumn('transaksi_items', 'nama_produk');
-            $hasNama       = Schema::hasColumn('transaksi_items', 'nama');
+            // 2. Deteksi otomatis kolom yang ada di database agar TIDAK ADA ERROR 'Column Not Found'
+            $columns = Schema::getColumnListing('transaksi_items');
+            
+            $hasNamaProduk = in_array('nama_produk', $columns);
+            $hasNama       = in_array('nama', $columns);
+            $hasCatatan    = in_array('catatan', $columns);
+            $hasProdukId   = in_array('produk_id', $columns);
+            $hasHarga      = in_array('harga', $columns);
+            $hasQty        = in_array('qty', $columns);
+            $hasSubtotal   = in_array('subtotal', $columns);
 
             foreach ($request->items as $item) {
-                // PAKSA NAMA PRODUK AGAR TIDAK PERNAH NULL / KOSONG
-                $namaProdukFix = null;
-
-                if (!empty($item['nama_produk'])) {
-                    $namaProdukFix = $item['nama_produk'];
-                } elseif (!empty($item['nama'])) {
-                    $namaProdukFix = $item['nama'];
-                } elseif (!empty($item['id'])) {
+                // Tentukan nama item
+                $namaFix = $item['nama_produk'] ?? $item['nama'] ?? null;
+                if (empty($namaFix) && !empty($item['id'])) {
                     $p = DB::table('produks')->where('id', $item['id'])->first();
                     if ($p) {
-                        $namaProdukFix = $p->nama ?? $p->nama_produk ?? null;
+                        $namaFix = $p->nama ?? $p->nama_produk ?? null;
                     }
                 }
-
-                // Jaminan Terakhir: Jika masih kosong, beri nama default
-                if (empty($namaProdukFix)) {
-                    $namaProdukFix = 'Roti Bakar Romansa';
+                if (empty($namaFix)) {
+                    $namaFix = 'Roti Bakar Romansa';
                 }
 
                 $itemData = [
                     'transaksi_id' => $transaksiId,
-                    'produk_id'    => $item['id'] ?? null,
-                    'harga'        => $item['harga'],
-                    'qty'          => $item['qty'],
-                    'subtotal'     => $item['harga'] * $item['qty'],
                     'created_at'   => now(),
                     'updated_at'   => now(),
                 ];
 
+                // Hanya masukkan kolom yang BENAR-BENAR ADA di tabel database kamu
+                if ($hasProdukId) {
+                    $itemData['produk_id'] = $item['id'] ?? null;
+                }
                 if ($hasNamaProduk) {
-                    $itemData['nama_produk'] = $namaProdukFix;
+                    $itemData['nama_produk'] = $namaFix;
                 }
                 if ($hasNama) {
-                    $itemData['nama'] = $namaProdukFix;
+                    $itemData['nama'] = $namaFix;
+                }
+                if ($hasHarga) {
+                    $itemData['harga'] = $item['harga'];
+                }
+                if ($hasQty) {
+                    $itemData['qty'] = $item['qty'];
+                }
+                if ($hasSubtotal) {
+                    $itemData['subtotal'] = $item['harga'] * $item['qty'];
                 }
                 if ($hasCatatan && isset($item['catatan'])) {
                     $itemData['catatan'] = $item['catatan'];
@@ -106,7 +115,7 @@ class KasirController extends Controller
                 DB::table('transaksi_items')->insert($itemData);
             }
 
-            // Potong stok
+            // 3. Potong stok
             $totalQty = array_sum(array_column($request->items, 'qty'));
             $stokMaster = DB::table('stok_master')->first();
             if ($stokMaster) {
