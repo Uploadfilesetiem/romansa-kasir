@@ -1,53 +1,55 @@
 @extends('layouts.app')
-@section('title', 'Struk')
+@section('title', 'Struk Pembayaran')
 
 @section('content')
-  <div class="struk-wrap">
-    <div class="struk">
-      <div class="check-wrap">
-        <svg class="check-circle" viewBox="0 0 52 52">
-          <circle cx="26" cy="26" r="24"></circle>
-          <path d="M15 27l7 7 15-15"></path>
-        </svg>
-      </div>
-      <h3>ROTI BAKAR ROMANSA</h3>
-      <div class="sub-center">Hangat di Setiap Cerita</div>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 
-      <div class="meta">Kode: {{ $transaksi->kode }}</div>
-      <div class="meta" style="margin-bottom:10px;">{{ $transaksi->created_at->translatedFormat('d M Y, H:i') }}</div>
+<div class="container py-4" style="max-width: 400px;">
+  <div class="card border-0 shadow-sm p-3 bg-white text-center">
+    <h4 class="fw-bold mb-0" style="color: #b45309;">ROTI BAKAR ROMANSA</h4>
+    <p class="small text-muted mb-2">Struk Pembayaran Kasir</p>
+    <hr class="my-2" style="border-top: 2px dashed #ccc;">
 
-      <div class="divider-dash"></div>
+    <div class="text-start small mb-2">
+      <div><strong>Kode:</strong> {{ $transaksi->kode_transaksi }}</div>
+      <div><strong>Tanggal:</strong> {{ date('d-m-Y H:i', strtotime($transaksi->created_at ?? now())) }}</div>
+      <div><strong>Metode:</strong> {{ $transaksi->metode_pembayaran }}</div>
+    </div>
 
-      @foreach ($transaksi->items as $it)
-        <div class="struk-item">
-          <span>{{ $it->nama_produk }} x{{ $it->qty }}</span>
-          <span>Rp{{ number_format($it->harga * $it->qty, 0, ',', '.') }}</span>
+    <hr class="my-2" style="border-top: 2px dashed #ccc;">
+
+    <div class="text-start small mb-2">
+      @foreach($transaksi->items as $item)
+        <div class="d-flex justify-content-between">
+          <span class="fw-bold">{{ $item->nama_produk }} x{{ $item->qty }}</span>
+          <span>Rp{{ number_format($item->subtotal, 0, ',', '.') }}</span>
         </div>
+        @if(!empty($item->catatan))
+          <div class="text-muted ms-2" style="font-size: 0.75rem;">Catatan: {{ $item->catatan }}</div>
+        @endif
       @endforeach
+    </div>
 
-      <div class="divider-dash"></div>
+    <hr class="my-2" style="border-top: 2px dashed #ccc;">
 
-      <div class="struk-item" style="font-weight:800; font-size:14px;">
-        <span>Total</span>
-        <span>Rp{{ number_format($transaksi->total, 0, ',', '.') }}</span>
+    <div class="text-start small mb-3">
+      <div class="d-flex justify-content-between">
+        <span>Total:</span>
+        <span class="fw-bold">Rp{{ number_format($transaksi->total, 0, ',', '.') }}</span>
       </div>
-      <div class="struk-item">
-        <span>Metode</span>
-        <span style="text-transform:uppercase;">{{ $transaksi->metode_bayar }}</span>
-      </div>
-      <div class="struk-item">
-        <span>Bayar</span>
+      <div class="d-flex justify-content-between">
+        <span>Bayar:</span>
         <span>Rp{{ number_format($transaksi->bayar, 0, ',', '.') }}</span>
       </div>
-      <div class="struk-item">
-        <span>Kembalian</span>
+      <div class="d-flex justify-content-between fw-bold text-success fs-6 mt-1">
+        <span>Kembali:</span>
         <span>Rp{{ number_format($transaksi->kembalian, 0, ',', '.') }}</span>
       </div>
     </div>
-  </div>
 
-  <div style="max-width:340px;margin:14px auto 0;">
-    <button type="button" class="btn-primary" onclick="window.print()">Cetak</button>
-    <a href="{{ route('kasir.index') }}"><button type="button" class="btn-outline">Transaksi Baru</button></a>
+    <div class="d-grid gap-2">
+      <button onclick="window.print()" class="btn btn-warning fw-bold text-dark">Cetak Struk</button>
+      <a href="{{ route('kasir.index') }}" class="btn btn-outline-secondary btn-sm">Kembali ke Kasir</a>
+    </div>
   </div>
-@endsection
+</div>
