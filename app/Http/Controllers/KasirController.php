@@ -14,7 +14,6 @@ class KasirController extends Controller
     {
         $produk = Produk::all();
         
-        // Format $grouped agar sesuai dengan index.blade.php (kategori & items)
         $groupedRaw = $produk->groupBy('kategori');
         $grouped = [];
 
@@ -25,8 +24,8 @@ class KasirController extends Controller
             ];
         }
 
-        $stokMaster = StokMaster::first();
-        $stok = $stokMaster ? $stokMaster->stok_sisa : 0;
+        // Kirim objek StokMaster utuh ke view
+        $stok = StokMaster::first();
 
         return view('kasir.index', compact('produk', 'grouped', 'stok'));
     }
@@ -62,6 +61,13 @@ class KasirController extends Controller
                 'subtotal'     => $item['harga'] * $item['qty'],
                 'catatan'      => $item['catatan'] ?? null,
             ]);
+        }
+
+        // Potong stok roti tawar setelah transaksi berhasil
+        $totalQty = array_sum(array_column($request->items, 'qty'));
+        $stokMaster = StokMaster::first();
+        if ($stokMaster) {
+            $stokMaster->decrement('stok_sisa', $totalQty);
         }
 
         return response()->json([
